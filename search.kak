@@ -32,6 +32,7 @@ The pattern is forwarded to the grep utility} \
                set-option buffer search_current_pattern '${pattern}'
                set-register '/' '${pattern}'
                hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r $(dirname ${output}) } }
+               try %{ focus '${kak_opt_toolsclient}' }
            }"
 }}
 
@@ -47,6 +48,9 @@ hook -group search-highlight global WinSetOption filetype=search %{
   add-highlighter window/search/ regex "^(\d+-)([^\n]*)$" 1:green 2:rgb:606060,default
   # -- MATCH PATTERN
   add-highlighter window/search/ dynregex '%opt{search_current_pattern}' 0:red+b
+  # -- MATCH CURRENT SEARCH LINE (grey RGB value)
+  add-highlighter window/search/ line %{%opt{search_current_line}} default,rgb:808080
+  # --
   hook -once -always window WinSetOption filetype=.* %{ remove-highlighter window/search }
 }
 
@@ -73,7 +77,12 @@ define-command -hidden search-jump %{
       execute-keys "gg %opt{search_current_line}g"
       # -- JUMP TO FILE:LINE
       evaluate-commands -try-client %opt{jumpclient} -verbatim -- edit -existing %opt{search_current_line_file} %opt{search_current_line_number}
-      try %{ focus %opt{jumpclient} }
+      try %{
+        # -- FOCUS ON RIGHT CLIENT
+        focus %opt{jumpclient}
+        # -- SELECT PATTERN
+        execute-keys "/%opt{search_current_pattern}<ret>"
+      }
     }
   }
 }
