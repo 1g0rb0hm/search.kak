@@ -1,6 +1,6 @@
 # Kakoune Search
 
-Simple search plugin inspired by **CTRLSF** for Kakoune.
+Simple search Kakoune plugin inspired by ViM **CtrlSF** plugin.
 
 ## Installation
 
@@ -8,7 +8,7 @@ Simple search plugin inspired by **CTRLSF** for Kakoune.
 
 Just add this to your `kakrc`:
 ```
-plug "1g0rb0hm/search.kak" %{
+plug "1g0rb0hm/search.kak" config %{
   # EMPTY
 }
 ```
