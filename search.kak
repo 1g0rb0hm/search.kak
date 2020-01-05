@@ -24,7 +24,7 @@ The pattern is forwarded to the grep utility} \
      fi
      # -- EXEC SEARCH
      ( ${kak_opt_searchcmd} "${pattern}" | tr -d '\r' > ${output} 2>&1 & ) > /dev/null 2>&1 < /dev/null
-     # -- DISPLAY RESULT
+     # -- SETUP *search* BUFFER AND DISPLAY RESULT
      printf %s\\n "evaluate-commands -try-client '$kak_opt_toolsclient' %{
                edit! -fifo ${output} *search*
                set-option buffer filetype search
@@ -75,7 +75,7 @@ define-command -hidden search-jump %{
       evaluate-commands -try-client %opt{jumpclient} -verbatim -- edit -existing %opt{search_current_line_file} %opt{search_current_line_number}
       try %{ focus %opt{jumpclient} }
     }
-}
+  }
 }
 
 define-command search-next-match -docstring 'Jump to the next search match' %{
@@ -83,7 +83,6 @@ define-command search-next-match -docstring 'Jump to the next search match' %{
     buffer '*search*'
     # First jump to end of buffer so that if search_current_line == 0
     # 0g<a-l> will be a no-op and we'll jump to the first result.
-    # Yeah, thats ugly...
     execute-keys "ge %opt{search_current_line}g<a-l> /^\d+:<ret>"
     search-jump
 }
@@ -95,7 +94,6 @@ define-command search-previous-match -docstring 'Jump to the previous search mat
     buffer '*search*'
     # First jump to end of buffer so that if search_current_line == 0
     # 0g<a-l> will be a no-op and we'll jump to the first result.
-    # Yeah, thats ugly...
     execute-keys "ge %opt{search_current_line}g<a-h> <a-/>^\d+:<ret>"
     search-jump
   }
