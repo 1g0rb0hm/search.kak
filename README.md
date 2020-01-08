@@ -1,4 +1,4 @@
-# search.kak
+# Search.kak
 
 User friendly project wide search with context for [Kakoune][1] editor.
 
@@ -22,6 +22,8 @@ Then reload Kakoune config or restart Kakoune and run `:plug-install`.
 Simply select the text you would like to search for and run `:search`.
 
 You can then navigate from one match to the next using `n` as the search term is automatically stored in the default `/` search register.
+
+Another way of navigating to the previous/next match is via `:search-previous-match` and `search-next-match`.
 
 Each match is surrounded by a configurable number of context lines (see `search_context` option).
 

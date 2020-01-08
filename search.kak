@@ -82,7 +82,6 @@ If no pattern is specified the current selection is used as a search term} \
            }"
 }}
 
-
 hook global WinSetOption filetype=search %{
   hook buffer -group search-hooks NormalKey <ret> search-jump
   hook -once -always window WinSetOption filetype=.* %{ remove-hooks buffer search-hooks }
