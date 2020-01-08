@@ -1,16 +1,62 @@
+declare-option -docstring "number of context lines before and after matching line" \
+    int search_context 3
 declare-option -docstring "shell command run to search for subtext in a file/directory" \
-    str searchcmd 'rg --line-number --color=never --heading -C3'
+    str searchcmd 'rg --line-number --color=never --heading'
 declare-option -docstring "name of the client in which utilities display information" \
     str toolsclient
+declare-option -docstring "name of the client in which all source code jumps will be executed" \
+    str jumpclient
+
+# -----------------------------------------------------------------------------
+
 declare-option -hidden int search_current_line 0
 declare-option -hidden str search_current_pattern ''
 
 declare-option -hidden int search_current_line_number 0
 declare-option -hidden str search_current_line_file ''
 
-define-command -params .. -file-completion \
-  -docstring %{search [pattern]: file search wrapper
-The pattern is forwarded to the grep utility} \
+# -----------------------------------------------------------------------------
+
+# -- Face used for matched file name
+set-face global search_face_match_file_name magenta,default+b
+# -- Face used for matched separator
+set-face global search_face_match_separator magenta,default+b
+# -- Face used for matched context
+set-face global search_face_match_context rgb:606060,default
+# -- Face used for matched line
+set-face global search_face_match_line yellow,default
+# -- Face used for matched line number
+set-face global search_face_match_line_number green,default
+# -- Face used for matched pattern
+set-face global search_face_match_pattern red,default+b
+# -- Face used for currently active search line
+set-face global search_face_match_active_line default,rgb:808080
+
+# -- Highlighters for *search* window
+hook -group search-highlight global WinSetOption filetype=search %{
+  add-highlighter window/search group
+  # -- MATCH FILE NAME
+  add-highlighter window/search/ regex "^([^\n\d-][^\n]*)" 1:search_face_match_file_name
+  # -- MATCH SEPERATOR
+  add-highlighter window/search/ regex "^--[^\n]*$" 0:search_face_match_separator
+  # -- MATCH LINE
+  add-highlighter window/search/ regex "^(\d+:)([^\n]*)$" 1:search_face_match_line_number 2:search_face_match_line
+  # -- MATCH CONTEXT LINE
+  add-highlighter window/search/ regex "^(\d+-)([^\n]*)$" 1:search_face_match_line_number 2:search_face_match_context
+  # -- MATCH PATTERN
+  add-highlighter window/search/ dynregex '%opt{search_current_pattern}' 0:search_face_match_pattern
+  # -- MATCH CURRENT SEARCH LINE (grey RGB value)
+  add-highlighter window/search/ line %{%opt{search_current_line}} search_face_match_active_line
+  # --
+  hook -once -always window WinSetOption filetype=.* %{ remove-highlighter window/search }
+}
+
+# -----------------------------------------------------------------------------
+
+# -- Command: search
+define-command -params .. \
+  -docstring %{search [pattern]: recursively search current directory for lines matching a pattern 
+If no pattern is specified the current selection is used as a search term} \
   search %{ evaluate-commands %sh{
      # -- OUTPUT
      output=$(mktemp -d "${TMPDIR:-/tmp}"/kak-search.XXXXXXXX)/fifo
@@ -23,7 +69,7 @@ The pattern is forwarded to the grep utility} \
        pattern="${kak_selection}"
      fi
      # -- EXEC SEARCH
-     ( ${kak_opt_searchcmd} "${pattern}" | tr -d '\r' > ${output} 2>&1 & ) > /dev/null 2>&1 < /dev/null
+     ( ${kak_opt_searchcmd} -C${kak_opt_search_context} "${pattern}" | tr -d '\r' > ${output} 2>&1 & ) > /dev/null 2>&1 < /dev/null
      # -- SETUP *search* BUFFER AND DISPLAY RESULT
      printf %s\\n "evaluate-commands -try-client '$kak_opt_toolsclient' %{
                edit! -fifo ${output} *search*
@@ -36,32 +82,13 @@ The pattern is forwarded to the grep utility} \
            }"
 }}
 
-hook -group search-highlight global WinSetOption filetype=search %{
-  add-highlighter window/search group
-  # -- MATCH FILE NAME
-  add-highlighter window/search/ regex "^([^\n\d-][^\n]*)" 1:magenta+b
-  # -- MATCH SEPERATOR
-  add-highlighter window/search/ regex "^--[^\n]*$" 0:magenta
-  # -- MATCH LINE
-  add-highlighter window/search/ regex "^(\d+:)([^\n]*)$" 1:green 2:yellow
-  # -- MATCH CONTEXT LINE
-  add-highlighter window/search/ regex "^(\d+-)([^\n]*)$" 1:green 2:rgb:606060,default
-  # -- MATCH PATTERN
-  add-highlighter window/search/ dynregex '%opt{search_current_pattern}' 0:red+b
-  # -- MATCH CURRENT SEARCH LINE (grey RGB value)
-  add-highlighter window/search/ line %{%opt{search_current_line}} default,rgb:808080
-  # --
-  hook -once -always window WinSetOption filetype=.* %{ remove-highlighter window/search }
-}
 
 hook global WinSetOption filetype=search %{
   hook buffer -group search-hooks NormalKey <ret> search-jump
   hook -once -always window WinSetOption filetype=.* %{ remove-hooks buffer search-hooks }
 }
 
-declare-option -docstring "name of the client in which all source code jumps will be executed" \
-    str jumpclient
-
+# -- Command: search-jump
 define-command -hidden search-jump %{
   evaluate-commands %{ # use evaluate-commands to ensure jumps are collapsed
     try %{
