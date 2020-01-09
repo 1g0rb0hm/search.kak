@@ -55,31 +55,35 @@ hook -group search-highlight global WinSetOption filetype=search %{
 
 # -- Command: search
 define-command -params .. \
-  -docstring %{search [pattern]: recursively search current directory for lines matching a pattern 
-If no pattern is specified the current selection is used as a search term} \
-  search %{ evaluate-commands %sh{
-     # -- OUTPUT
-     output=$(mktemp -d "${TMPDIR:-/tmp}"/kak-search.XXXXXXXX)/fifo
-     mkfifo ${output}
-     # -- PATTERN
-     pattern=""  # EMPTY
+  -docstring %{search [pattern]: recursively search current directory for pattern
+If no pattern is specified the current selection is used.} \
+  search %{ evaluate-commands -try-client %opt{toolsclient} %{
+    # -- Search OUTPUT stored in %reg{o}
+    set-register o %sh{ 
+      output=$(mktemp -d "${TMPDIR:-/tmp}"/kak-search.XXXXXXXX)/fifo
+      mkfifo $output
+      printf "%s" "$output"
+   }
+   # -- Search PATTERN stored in %reg{p}
+   set-register p %sh{
      if [ $# -gt 0 ]; then
-       pattern="$@"
+       printf "%s" "$@"
      else
-       pattern="${kak_selection}"
+       printf "%s" "${kak_selection}"
      fi
-     # -- EXEC SEARCH
-     ( ${kak_opt_searchcmd} -C${kak_opt_search_context} "${pattern}" | tr -d '\r' > ${output} 2>&1 & ) > /dev/null 2>&1 < /dev/null
-     # -- SETUP *search* BUFFER AND DISPLAY RESULT
-     printf %s\\n "evaluate-commands -try-client '$kak_opt_toolsclient' %{
-               edit! -fifo ${output} *search*
-               set-option buffer filetype search
-               set-option buffer search_current_line 0
-               set-option buffer search_current_pattern '${pattern}'
-               set-register '/' '${pattern}'
-               hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r $(dirname ${output}) } }
-               try %{ focus '${kak_opt_toolsclient}' }
-           }"
+   }
+   # -- Execute SEARCH
+   nop %sh{
+     ( ${kak_opt_searchcmd} -C${kak_opt_search_context} "${kak_reg_p}" | tr -d '\r' > ${kak_reg_o} 2>&1 & ) > /dev/null 2>&1 < /dev/null
+   }
+   # -- Setup and populate *search* buffer
+   edit! -fifo %reg{o} *search*
+   set-option buffer filetype search
+   set-option buffer search_current_line 0
+   set-option buffer search_current_pattern "%reg{p}"
+   set-register '/' "%reg{p}"
+   hook -always -once buffer BufCloseFifo .* %{ nop %sh{ rm -r $(dirname ${kak_reg_o}) } }
+   try %{ focus %opt{toolsclient} }
 }}
 
 hook global WinSetOption filetype=search %{
