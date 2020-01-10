@@ -12,18 +12,18 @@ Just add this to your `kakrc`:
 ```kak
 # -- Search: https://github.com/1g0rb0hm/search.kak
 plug "1g0rb0hm/search.kak" config %{
-  set-option global search_context 5 # number of context lines
+  set-option global search_context 3 # number of context lines
 }
 ```
 Then reload Kakoune config or restart Kakoune and run `:plug-install`.
 
 ## Usage
 
-Simply select the text you would like to search for and run `:search`.
+Simply select the text you would like to search for and run `:search`. You can also provide a search pattern as an argument `:search [pattern]`
 
 You can then navigate from one match to the next using `n` as the search term is automatically stored in the default `/` search register.
 
-Another way of navigating to the previous/next match is via `:search-previous-match` and `search-next-match`.
+Another way of navigating to the previous/next match is via `:search-previous-match` and `:search-next-match`.
 
 Each match is surrounded by a configurable number of context lines (see `search_context` option).
 

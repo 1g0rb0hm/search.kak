@@ -54,9 +54,9 @@ hook -group search-highlight global WinSetOption filetype=search %{
 # -----------------------------------------------------------------------------
 
 # -- Command: search
-define-command -params .. \
-  -docstring %{search [pattern]: recursively search current directory for pattern
-If no pattern is specified the current selection is used.} \
+define-command -params ..1 \
+  -docstring %{search [<pattern>]: recursively search current directory for pattern
+If no <pattern> is specified the current selection is used.} \
   search %{ evaluate-commands -try-client %opt{toolsclient} %{
     # -- Search OUTPUT stored in %reg{o}
     set-register o %sh{ 
